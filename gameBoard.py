@@ -8,6 +8,10 @@ class gameBoard:
 	BOARD_ZOOM = 10
 	BOARD_COLOR = (255, 255, 255)
 	BOARD_TROPHY_COLOR = (0, 0, 255)
+
+
+	FONT_SCALE = 0.5
+	FONT_COLOR = (0, 255, 0)
 	
 	def __init__(self, dimension, numSnakes=1):
 		self.width = dimension[1]
@@ -15,16 +19,18 @@ class gameBoard:
 		self.board = np.zeros([self.height, self.width])
 		self.drawBoard()
 
-		self.trophy = point.Point()
+		self.trophy = point.Point(-1, -1)
 
 		self.randomizeTrophy()
 
 		self.snakes = []
 		for i in range(numSnakes):
 			snake = Snake()
-			snake.randomizeStartPosition((self.width, self.height), self.trophy.getPos())
+			snake.randomizeStartPosition(width = self.width, height = self.height, notEqualToTrophy = self.trophy.getPos())
 			self.snakes.append(snake)
 		
+		self.font = cv.FONT_HERSHEY_SIMPLEX
+
 
 
 	def getDimension(self):
@@ -42,6 +48,11 @@ class gameBoard:
 
 
 	def randomizeTrophy(self):
+		oldx, oldy = self.trophy.getPos()
+
+		if oldx != -1 and oldy != -1:
+			self.board[oldy, oldx] = 0
+
 		x = np.random.randint(1, self.width)
 		y = np.random.randint(1, self.height)
 
@@ -71,25 +82,51 @@ class gameBoard:
 			i, j = snake.getPos()		
 			cv.rectangle(img, (x + i * self.BOARD_ZOOM + 1, y + j * self.BOARD_ZOOM + 1), (x + (i + 1) * self.BOARD_ZOOM - 1, y + (j + 1) * self.BOARD_ZOOM - 1), snake.getColor(), -1)		
 
+		# data
+		posy = 20
+		x = 10
+
+		for snake in self.snakes:
+			text = "d=%.2f md=%.2f t=%d sc=%d" %(snake.distanceToTrophy, snake.minDistanceToTrophy, snake.stuckCounter, snake.getScore())
+			cv.putText(img, text, (x, posy), self.font, self.FONT_SCALE, self.FONT_COLOR, 1, cv.LINE_AA)
+			posy = posy + 20
+
+
 
 		return img
 
 	def run(self):
 		for snake in self.snakes:
 			snake.control()
-			snake.move()
+			snake.move(width = self.width, height = self.height)
+			snake.updateSensor(self.board, self.trophy)
+			snake.collision(self.board)
+			if snake.reachedTrophy(self.board, self.trophy):
+				self.randomizeTrophy()
 
-
-	def collision(self):
-		for snake in self.snakes:		
-			x, y = snake.getPos()
-			print("%d, %d" %(x,y))
-			if self.board[y, x] == 1:
-				snake.die()
 
 	def finished(self):
-		for snake in snakes:
+		for snake in self.snakes:
 			if snake.isAlive(): return False
 
 		return True
 
+
+	def bestSnake(self):
+		best = None
+
+		for snake in self.snakes:
+			if best is None:
+				best = snake
+			else:
+				if snake.getScore() > best.getScore:
+					best = snake
+
+		return best
+
+
+	def getNumSnakes(self):
+		return len(self.snakes)
+
+	def getSnakes(self):
+		return self.snakes

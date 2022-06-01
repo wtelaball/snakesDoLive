@@ -1,5 +1,8 @@
 import neuralnetwork
 import numpy as np
+import math
+import tools
+import time
 
 class Snake:
 
@@ -10,7 +13,9 @@ class Snake:
 
 	BASE_COLOR = (255, 255, 0)
 
-	SENSOR_NUM = 5
+	SENSOR_NUM = 6
+
+	SNAKE_MAX_STUCK = 2
 
 	def __init__(self):
 
@@ -32,8 +37,15 @@ class Snake:
 
 		self.nn.randomWeights()
 
+		# timer
+		self.distanceToTrophy = 1000
+		self.minDistanceToTrophy = 1000
+		self.lastSensorUpdate = time.time()
 
-	def randomizeStartPosition(self, dimension, notEqualToTrophy):
+
+		self.score = 0
+
+	def randomizeStartPosition(self, width, height, notEqualToTrophy):
 
 		x = 1
 		y = 1
@@ -41,8 +53,8 @@ class Snake:
 		equal = True
 
 		while equal:
-			x = np.random.randint(1, dimension[1])
-			y = np.random.randint(1, dimension[0])
+			x = np.random.randint(1, width)
+			y = np.random.randint(1, height)
 
 			if (x, y) == notEqualToTrophy:
 				equal = True
@@ -53,8 +65,9 @@ class Snake:
 		self.y = y
 
 
-	def move(self):
-	
+	def move(self, width, height):
+
+
 		if self.alive:
 			if self.direction == self.UP:
 				self.y = self.y - 1
@@ -64,6 +77,11 @@ class Snake:
 				self.x = self.x - 1
 			if self.direction == self.RIGHT:
 				self.x = self.x + 1
+
+			# out of limits
+			if self.y<0 or self.y>=height or self.x<0 or self.x>=width:
+				self.die()
+
 
 	def turnLeft(self):
 		self.direction +=1
@@ -98,6 +116,8 @@ class Snake:
 		if self.alive:
 			self.output = self.nn.processInputs(self.sensors)
 
+			# print(self.output)
+
 			if (self.output[0] > 2/3.0):
 				self.turnRight()
 			elif (self.output[0] < 1/3.0):
@@ -110,3 +130,117 @@ class Snake:
 
 	def die(self):
 		self.alive = False
+		self.stuckCounter = 0
+
+	def distance(self, board, direction):
+
+		if direction == self.UP:
+			dx = 0
+			dy = -1
+		
+		if direction == self.DOWN:
+			dx = 0
+			dy = 1
+		
+		if direction == self.RIGHT:
+			dx = 1
+			dy = 0
+		
+		if direction == self.LEFT:
+			dx = -1
+			dy = 0
+
+		x,y = self.getPos()
+		
+		distance = 0
+
+		while True:
+			x += dx
+			y += dy
+
+			if y < 0: break
+			if y >= board.shape[0]: break
+			if x < 0: break
+			if x >= board.shape[1]: break
+
+			if board[y, x] == 1: break
+
+			distance += 1
+
+		return distance
+
+	def updateSensor(self, board, trophy):
+
+		if self.alive:
+
+			maxDistance = math.sqrt(board.shape[0] ** 2 + board.shape[1] ** 2)
+
+			self.sensors[0] = self.distance(board, self.UP) / maxDistance
+			self.sensors[1] = self.distance(board, self.LEFT) / maxDistance
+			self.sensors[2] = self.distance(board, self.DOWN) / maxDistance
+			self.sensors[3] = self.distance(board, self.RIGHT) / maxDistance
+
+			tx, ty = trophy.getPos()
+			x, y = self.getPos()
+
+			w = board.shape[1]
+			h = board.shape[0]
+
+
+			self.distanceToTrophy = tools.distance(x, y, tx, ty)
+
+			self.sensors[4] = (y - ty) / maxDistance
+			self.sensors[5] = (x - tx) / maxDistance
+
+			if (self.distanceToTrophy < self.minDistanceToTrophy):
+				self.minDistanceToTrophy = self.distanceToTrophy
+
+				self.stuckCounter = self.SNAKE_MAX_STUCK
+			else:
+				if (time.time() - self.lastSensorUpdate) >= 1.0:
+					self.stuckCounter -= 1
+					self.lastSensorUpdate = time.time()
+
+					if self.stuckCounter == 0:
+						self.die()
+
+
+
+			#print(self.sensors)
+
+
+	def collision(self, board):
+	
+		if self.alive:
+			x, y = self.getPos()
+
+			if board[y, x] == 1:
+				self.die()
+
+	def reachedTrophy(self, board, trophy):
+		x, y = self.getPos()
+
+		if self.alive:
+			if board[y, x] == 2:
+				self.score = self.score + 1
+				return True
+
+		return False
+
+
+	def getGenotype(self):
+		'''
+		get features of this individual
+		'''
+
+		return self.nn.getWeights()
+
+	def setGenotype(self, w):
+		'''
+		set features of this individual
+		'''
+		self.nn.setWeights(w)
+
+
+	def getScore(self):
+		return self.score

@@ -15,7 +15,7 @@ class Snake:
 
 	SENSOR_NUM = 8
 
-	SNAKE_MAX_STUCK = 2
+	SNAKE_MAX_STUCK = 5
 
 	def __init__(self, name = "snake"):
 
@@ -103,6 +103,10 @@ class Snake:
 
 	def getPos(self):
 		return self.x, self.y
+
+	def setPos(self, x, y):
+		self.x = x
+		self.y = y
 
 	def setColor(self, color):
 		self.color = color

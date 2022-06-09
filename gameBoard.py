@@ -17,6 +17,7 @@ class gameBoard:
 		self.width = dimension[1]
 		self.height = dimension[0]
 		self.board = np.zeros([self.height, self.width])
+		self.name = boardName
 		self.drawBoard()
 
 		self.trophy = point.Point(-1, -1)
@@ -24,11 +25,20 @@ class gameBoard:
 		self.randomizeTrophy()
 
 		self.snakes = []
+		x, y = (1, 1)
+
 		for i in range(numSnakes):
 			snake = Snake(name = boardName + "_snake%02d" %i)
-			snake.randomizeStartPosition(width = self.width, height = self.height, notEqualToTrophy = self.trophy.getPos())
+			if i == 0:
+				snake.randomizeStartPosition(width = self.width, height = self.height, notEqualToTrophy = self.trophy.getPos())
+				x, y = snake.getPos()
+			else:
+				snake.setPos(x, y)
+
 			self.snakes.append(snake)
 		
+	def __str__(self):
+		return self.name
 
 	def getDimension(self):
 		return self.height, self.width
@@ -62,7 +72,7 @@ class gameBoard:
 		img = np.zeros([self.height * self.BOARD_ZOOM + 1, self.width * self.BOARD_ZOOM + 1, 3], dtype=np.uint8)
 
 		# draw board
-		
+
 		x = 0
 		y = 0
 

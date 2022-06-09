@@ -31,10 +31,10 @@ def createWindows(numWindows, screenSize):
 	k = 0
 
 	for k in range(numWindows):
-		windows.append('snakes%02d' %(k))
+		windows.append('board%02d' %(k))
 
-		cv.namedWindow('snakes%02d' %(k), cv.WINDOW_NORMAL)
-		cv.moveWindow('snakes%02d' %(k), i * WINDOW_WIDTH, j * WINDOW_HEIGHT)
+		cv.namedWindow('board%02d' %(k), cv.WINDOW_NORMAL)
+		cv.moveWindow('board%02d' %(k), i * WINDOW_WIDTH, j * WINDOW_HEIGHT)
 		
 		#print("window moved to ", i *WINDOW_WIDTH, j * WINDOW_HEIGHT)
 
@@ -127,7 +127,7 @@ def main(dimension, numBoards = 10, totalGenerations = 10):
 				board.run()
 
 				screen = board.show()
-				cv.imshow('snakes%02d' %(k), screen)
+				cv.imshow('board%02d' %(k), screen)
 
 				finished = finished and board.finished()
 

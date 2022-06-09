@@ -6,8 +6,8 @@ import screeninfo
 import time
 import genetics
 
-WINDOW_HEIGHT = 500
-WINDOW_WIDTH = 500
+WINDOW_HEIGHT = 300
+WINDOW_WIDTH = 300
 
 windows = []
 
@@ -88,7 +88,7 @@ def getBestSnake(boards):
 	return best, secondBest
 
 
-def main(dimension, numBoards = 10, totalGenerations = 50):
+def main(dimension, numBoards = 10, totalGenerations = 10):
 
 	screenSize = getScreenSize()
 	print("screen size=", screenSize)
@@ -106,7 +106,11 @@ def main(dimension, numBoards = 10, totalGenerations = 50):
 		boards = []
 
 		for i in range(numBoards):
-			boards.append(gameBoard.gameBoard((dimension[0], dimension[1])))
+			boards.append(
+				gameBoard.gameBoard(
+					(dimension[0], dimension[1]), 
+					numSnakes = 5, 
+					boardName = "board%02d" %i))
 
 		genetics.updateGenetics(boards, best, secondBest)
 
@@ -129,7 +133,8 @@ def main(dimension, numBoards = 10, totalGenerations = 50):
 
 				k += 1
 
-			key = cv.waitKey(1)
+			key = cv.waitKey(20)
+
 			if key >= 0:
 				key = chr(key).upper()
 				if key == 'W':

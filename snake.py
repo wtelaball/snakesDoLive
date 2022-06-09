@@ -13,11 +13,11 @@ class Snake:
 
 	BASE_COLOR = (255, 255, 0)
 
-	SENSOR_NUM = 6
+	SENSOR_NUM = 8
 
 	SNAKE_MAX_STUCK = 2
 
-	def __init__(self):
+	def __init__(self, name = "snake"):
 
 		self.x = 1
 		self.y = 1
@@ -30,10 +30,10 @@ class Snake:
 
 		# init neuralnetwork
 		self.nn = neuralnetwork.NeuralNetwork()
-		self.nn.addLayer(self.SENSOR_NUM, 4)
-		self.nn.addLayer(4, 3)
-		self.nn.addLayer(3, 2)
-		self.nn.addLayer(2, 1)
+		self.nn.addLayer(self.SENSOR_NUM, 10)
+		self.nn.addLayer(10, 10)
+		self.nn.addLayer(10, 3)
+		#self.nn.addLayer(2, 1)
 
 		self.nn.randomWeights()
 
@@ -44,6 +44,11 @@ class Snake:
 
 
 		self.score = 0
+
+		self.name = name
+
+	def __str__(self):
+		return self.name
 
 	def randomizeStartPosition(self, width, height, notEqualToTrophy):
 
@@ -116,21 +121,25 @@ class Snake:
 		if self.alive:
 			self.output = self.nn.processInputs(self.sensors)
 
-			# print(self.output)
+			maximo = max(self.output)
 
-			if (self.output[0] > 2/3.0):
+			if maximo == self.output[0]:
 				self.turnRight()
-			elif (self.output[0] < 1/3.0):
+			elif maximo == self.output[1]:
 				self.turnLeft()
 			else:
 				self.turnNo()
 
+		
 	def isAlive(self):
 		return self.alive
 
 	def die(self):
 		self.alive = False
 		self.stuckCounter = 0
+
+	def mdistance(self, x1, y1, x2, y2):
+		return abs(x1-x2) + abs(y1 - y2)
 
 	def distance(self, board, direction):
 
@@ -186,11 +195,13 @@ class Snake:
 			w = board.shape[1]
 			h = board.shape[0]
 
+			self.sensors[4] = self.mdistance(x, y-1, tx, ty) / maxDistance
+			self.sensors[5] = self.mdistance(x-1, y, tx, ty) / maxDistance
+			self.sensors[6] = self.mdistance(x, y+1, tx, ty) / maxDistance
+			self.sensors[7] = self.mdistance(x+1, y, tx, ty) / maxDistance
+
 
 			self.distanceToTrophy = tools.distance(x, y, tx, ty)
-
-			self.sensors[4] = (y - ty) / maxDistance
-			self.sensors[5] = (x - tx) / maxDistance
 
 			if (self.distanceToTrophy < self.minDistanceToTrophy):
 				self.minDistanceToTrophy = self.distanceToTrophy

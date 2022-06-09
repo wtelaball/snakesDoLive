@@ -13,7 +13,7 @@ class gameBoard:
 	FONT_SCALE = 0.5
 	FONT_COLOR = (0, 255, 0)
 	
-	def __init__(self, dimension, numSnakes=1):
+	def __init__(self, dimension, numSnakes=1, boardName="board"):
 		self.width = dimension[1]
 		self.height = dimension[0]
 		self.board = np.zeros([self.height, self.width])
@@ -25,13 +25,10 @@ class gameBoard:
 
 		self.snakes = []
 		for i in range(numSnakes):
-			snake = Snake()
+			snake = Snake(name = boardName + "_snake%02d" %i)
 			snake.randomizeStartPosition(width = self.width, height = self.height, notEqualToTrophy = self.trophy.getPos())
 			self.snakes.append(snake)
 		
-		self.font = cv.FONT_HERSHEY_SIMPLEX
-
-
 
 	def getDimension(self):
 		return self.height, self.width
@@ -63,6 +60,9 @@ class gameBoard:
 	def show(self):
 
 		img = np.zeros([self.height * self.BOARD_ZOOM + 1, self.width * self.BOARD_ZOOM + 1, 3], dtype=np.uint8)
+
+		# draw board
+		
 		x = 0
 		y = 0
 
@@ -73,22 +73,27 @@ class gameBoard:
 
 
 		# trophy
+
 		i, j = self.trophy.getPos()
 		cv.rectangle(img, (x + i * self.BOARD_ZOOM + 1, y + j * self.BOARD_ZOOM + 1), (x + (i + 1) * self.BOARD_ZOOM - 1, y + (j + 1) * self.BOARD_ZOOM - 1), self.BOARD_TROPHY_COLOR, -1)		
 
 		# snake
 
 		for snake in self.snakes:
-			i, j = snake.getPos()		
-			cv.rectangle(img, (x + i * self.BOARD_ZOOM + 1, y + j * self.BOARD_ZOOM + 1), (x + (i + 1) * self.BOARD_ZOOM - 1, y + (j + 1) * self.BOARD_ZOOM - 1), snake.getColor(), -1)		
+			if snake.isAlive():
+				i, j = snake.getPos()		
+				cv.rectangle(img, (x + i * self.BOARD_ZOOM + 1, y + j * self.BOARD_ZOOM + 1), (x + (i + 1) * self.BOARD_ZOOM - 1, y + (j + 1) * self.BOARD_ZOOM - 1), snake.getColor(), -1)		
 
 		# data
+
 		posy = 20
 		x = 10
+		font = cv.FONT_HERSHEY_SIMPLEX
+		FONT_SCALE = 0.5
 
 		for snake in self.snakes:
 			text = "d=%.2f md=%.2f t=%d sc=%d" %(snake.distanceToTrophy, snake.minDistanceToTrophy, snake.stuckCounter, snake.getScore())
-			cv.putText(img, text, (x, posy), self.font, self.FONT_SCALE, self.FONT_COLOR, 1, cv.LINE_AA)
+			cv.putText(img, text, (x, posy), font, FONT_SCALE, self.FONT_COLOR, 1, cv.LINE_AA)
 			posy = posy + 20
 
 
@@ -119,7 +124,7 @@ class gameBoard:
 			if best is None:
 				best = snake
 			else:
-				if snake.getScore() > best.getScore:
+				if snake.getScore() > best.getScore():
 					best = snake
 
 		return best
